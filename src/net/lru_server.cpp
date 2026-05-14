@@ -217,6 +217,7 @@ awaitable<void> net::lru_server<Key, Value>::accept_connections() {
 template<typename Key, typename Value>
 awaitable<void> net::lru_server<Key, Value>::handle_connection(tcp::socket socket) {
     boost::asio::streambuf buf;
+    std::string deferred_err;
     try {
         for (;;) {
             auto cmd_opt = co_await read_command(socket, buf);
@@ -239,10 +240,14 @@ awaitable<void> net::lru_server<Key, Value>::handle_connection(tcp::socket socke
     } catch (const boost::system::system_error&) {
         // Peer reset: drop the connection silently
     } catch (const std::exception& e) {
+        deferred_err = e.what();
+    }
+
+    if (!deferred_err.empty()) {
         boost::system::error_code ec;
         co_await boost::asio::async_write(
             socket,
-            boost::asio::buffer(std::string("-ERR ") + e.what() + "\r\n"),
+            boost::asio::buffer("-ERR " + deferred_err + "\r\n"),
             boost::asio::redirect_error(use_awaitable, ec));
     }
 
