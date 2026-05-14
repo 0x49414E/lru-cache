@@ -1,7 +1,6 @@
 # src/CMakeLists.txt
 
 add_library(lru_lib
-        net/server.cpp
         net/lru_server.cpp
         core/lru_cache_service.cpp
 )
